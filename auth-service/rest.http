@@ -1,0 +1,71 @@
+### CHECK THE URL
+GET http://localhost:6969/
+
+
+
+### GET UID
+GET http://localhost:6969/get-user-secret-id
+Content-Type: application/json
+refer: refer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2NjQ0Mzg1NDEsImV4cCI6MTY5NTk5NjE0MSwiYXVkIjoiNjMzNDVmYjRkOTg1Yjg4YWY1ZjFmM2EyIiwiaXNzIjoiQ29kZXJzIFBhcmsifQ.t53qyb9F2T1DH6HPFxk4OTaVH7vPPX1NPVmUsnF-jLg
+
+### Login Route
+POST http://localhost:6969/auth/login
+Content-Type:  application/json
+
+{
+    "username": "tt",
+    "password": "ttt"
+}
+
+
+### Register Route
+POST http://localhost:6969/auth/register
+Content-Type: application/json
+
+{
+    "fName": "test",
+    "lName": "test",
+    "username": "tt",
+    "email": "tt@example.com",
+    "password": "ttt"
+}
+
+
+### Verify the refresh token is valid or not
+POST http://localhost:6969/auth/verify-refresh-token
+Content-Type: application/json
+
+{
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2NjQyNTY1NDksImV4cCI6MTY5NTgxNDE0OSwiYXVkIjoiNjMzMWQwNTQ2M2JjZjQ5NTEyZWY2NjZiIiwiaXNzIjoiQ29kZXJzIFBhcmsifQ.4RwP1LO9gT5OsAXB7SDBUHPQ-yWnaBJPLdmseRiAKZY"
+
+}
+
+### Logout Route
+DELETE http://localhost:6969/auth/logout
+Content-Type: application/json
+
+{
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2NjQzOTEyNTMsImV4cCI6MTY5NTk0ODg1MywiYXVkIjoiNjMzNDVmMDAxOWM1Y2U2NDkwYjM2ZWViIiwiaXNzIjoiQ29kZXJzIFBhcmsifQ.QC3PEFwCNmPAH4UuIfK4vOIpGxCUVP1J7xmAtiENW3s",
+    "uid": "XNClIijwwChyoo5EG_AC"
+}
+
+
+### Reset/Update the current password
+POST http://localhost:6969/auth/reset-password
+Content-Type: application/json
+
+{
+    "username": "tt",
+    "oldpassword": "twtt",
+    "newpassword": "ttt"
+}
+
+### Forgot the password
+POST http://localhost:6969/auth/forgot-password
+Content-Type: application/json
+
+{
+    "email": "tt@gmail.com",
+    "username": "tt",
+    "newpassword": "twtt"
+}

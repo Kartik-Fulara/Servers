@@ -1,0 +1,47 @@
+### send data in db
+POST http://localhost:1000/api/addUser
+Content-Type: application/json
+
+{
+    "uid": "test",
+    "username": "tt3",
+    "name": "test",
+    "email": "tt@example.com"
+}
+
+### get user info through query using username
+GET http://localhost:1000/api/searchUser?username=tt
+
+### get user info through query using id
+GET http://localhost:1000/api/searchUser?id=63371dc5ac924b61626e796e
+
+
+### start a chat with random user 
+POST http://localhost:1000/api/startChat
+Content-Type: application/json
+
+{
+    "uid": "5Vdw77JCj3Zl53nh3vpm",
+    "friendId": "634133ad744e27926640cfd4"
+}
+
+### get all the users chats
+GET http://localhost:1000/api/getChats?uid=xX9F60t3Heu9Yw1CAayL
+
+
+### send message to a chat id
+POST http://localhost:1000/api/sendMessage
+Content-Type: application/json
+
+{
+    "Suid": "5Vdw77JCj3Zl53nh3vpm",
+    "chatId": "_VdJyn96l61_cd292_V9",
+    "message": "hi"
+}
+
+### get all the conversation
+GET http://localhost:1000/api/getConversation?chatId=xX9F60t3Heu9Yw1CAayL
+
+
+### get the logged In user info
+GET http://localhost:1000/api/getUserInfo?uid=XNClIijwwChyoo5EG_AC
