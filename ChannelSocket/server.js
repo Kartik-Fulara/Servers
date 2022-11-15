@@ -167,7 +167,7 @@ io.on("connection", (socket) => {
 
 // create a / route
 app.get('/', (req, res) => {
-    res.send('<h1>WELCOME TO CHANNEL SOCKET SERVER</h1>');
+    res.send('Welcome to Coders Parks Channel Socket Area');
 });
 
 
