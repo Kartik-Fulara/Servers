@@ -140,6 +140,10 @@ io.on('connection', (socket) => {
     });
 });
 
+app.get('/', (req, res) => {
+    res.send("Welcome to Coders Park Chat Socket Area")
+});
+
 let server_port = process.env.PORT || process.env.YOUR_PORT || 9654;
 
 http.listen(server_port, () => {
