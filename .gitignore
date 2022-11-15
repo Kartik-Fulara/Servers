@@ -10,6 +10,9 @@ node_modules
 # testing
 /coverage
 
+# remove inner .git
+*/.git
+
 # next.js
 /.next/
 /out/
