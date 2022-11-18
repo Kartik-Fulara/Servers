@@ -1,7 +1,8 @@
 const express = require("express");
 const axios = require("axios");
+const checkPassword = require("../middleware/passwordCheck.js");
 const router = express.Router();
-
+const User = require("../models/User.model.js");
 router.get("/getId", async (req, res) => {
     const uid = req.user;
     try {
@@ -124,24 +125,39 @@ router.get("/queryUserByUserName", async (req, res) => {
 
 router.post("/changeUserName", async (req, res) => {
 
-    const { username } = req.body;
+    const { username, pass } = req.body;
 
     const uid = req.user;
 
     try {
+        console.log(pass, uid);
+        // check weather is password is correct or not
+        const user = await User.findOne({ uid });
+        if (!user) {
+            return res.status(400).send({ message: "User not found" });
+        }
+        const auth = await checkPassword(pass, user.password);
+        if (!auth) {
+            res.send({ status: "Error", message: "Incorrect Password" });
+            return;
+        }
         const { data } = await axios.post(`${process.env.CHAT_SERVER_URL}/api/changeUserName`, { username, uid });
-
         res.send({ status: "Ok", data: data });
+        return;
     } catch (err) {
-        console.log(err.response.data);
-        if (err.response.data.message === "Username already taken") {
+        console.log(err)
+        if (err.response.data === undefined) {
+            res.send({ status: "Error", message: "Error while changing username" });
+            return;
+        }
+        if (err !== undefined && err.response.data !== undefined && err.response.data.message === "Username already taken") {
             console.log("Coming here");
             res.send({ status: "Error", message: "Username already taken" });
+            return;
         } else {
-        res.send({ status: "Error", message: "Error while changing username" });
-        }
+            res.send({ status: "Error", message: "Error while changing username" });
         return;
-
+        }
     }
 });
 

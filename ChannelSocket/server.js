@@ -66,11 +66,21 @@ io.on("connection", (socket) => {
 
         // Send users and room info
         io.to(user.room).emit("roomUsers", {
-            room: user.room,
-            users: getRoomUsers(user.room),
+            data: data.members
         });
         }
     });
+
+    socket.on("leaveRoom", (data) => {
+        console.log(data);
+        const user = userLeave(socket.id);
+        if (user) {
+            socket.leave(user.room);
+            io.to(user.room).emit("roomUsers", {
+                data
+            });
+        }
+    })
 
     socket.on("changeHost", (data) => {
         console.log(data);

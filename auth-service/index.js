@@ -79,6 +79,8 @@ const { verifyUser } = require("./middleware/verifyUser.js");
 
     app.use("/auth", authRouter);
 
+    app.use("/change", verifyUser, authRouter);
+
     app.use("/chat", verifyUser, chatRouter);
 
     app.use("/server", verifyUser, serverRouter);

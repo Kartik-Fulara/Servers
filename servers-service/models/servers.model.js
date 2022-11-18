@@ -63,6 +63,10 @@ const ServerSchema = new mongoose.Schema(
             userAvatar: {
                 type: String
             },
+            isKick:{
+                type: Boolean,
+                default: false
+            }
         }],
     },
     {

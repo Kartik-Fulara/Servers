@@ -1,13 +1,10 @@
 // all Routes
 // chat controllers
-
-
 const express = require("express");
 const { Chat } = require("../models/chat.model.js");
 const User = require("../models/user.model.js");
 
 // get all chats of specific user
-
 const addMessage = async (req, res, next) => {
     try {
         const { chatId, message, Suid } = req.body;
@@ -43,7 +40,6 @@ const addMessage = async (req, res, next) => {
 };
 
 // get all the conversation of current chatId
-
 const getMessage = async (req, res, next) => {
 
     try {
@@ -76,15 +72,11 @@ const getMessage = async (req, res, next) => {
 
 };
 
-
 const router = express.Router();
 
 // add new messages to current chat
-
 router.post("/sendMessage", addMessage);
 
 router.get("/getConversation", getMessage);
-
-
 
 module.exports = router;

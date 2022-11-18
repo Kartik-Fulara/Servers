@@ -1,10 +1,9 @@
 const express = require("express");
-
-const Error = require("http-errors");
 const User = require("../models/user.model.js");
 const mongoose = require('mongoose');
 const { Chat } = require("../models/chat.model.js");
 const { nanoid } = require("nanoid");
+const { changeUserNameToChats, getUid, get_id } = require("../util/Chat.utility.js");
 
 const addUser = async (req, res, next) => {
     try {
@@ -45,30 +44,6 @@ const queryUser = async (req, res) => {
     }
     catch (error) {
         res.status(500).send(error.message);
-    }
-};
-
-const getUid = async (id) => {
-    try {
-        // find user by id
-        const user = await User.findOne({ _id: id });
-
-        return user.uid;
-    } catch (error) {
-        console.log(error);
-        return null;
-    }
-};
-
-const get_id = async (uid) => {
-    try {
-        // find user by id
-        const user = await User.findOne({ uid: uid });
-        return user._id;
-    } catch /* A string that is used to store the user's id. */
-    (error) {
-        console.log(error);
-        return null;
     }
 };
 
@@ -478,9 +453,19 @@ const changeUserName = async (req, res, next) => {
         if (!user) {
             return res.status(400).send({ message: "User not found" });
         }
+        user.chats.forEach(async (chat) => {
+            const chatId = chat.chatId;
+            const senderId = chat.users.id;
+            const response = await changeUserNameToChats(senderId, chatId, username);
+            if (response.status === "error") {
+                res.status(400).send({ message: "Error in changing username" });
+                return;
+            }
+            console.log(response);
+        });
         user.username = username;
         await user.save();
-        res.status(200).send({ message: "Username changed" });
+        res.status(200).send({ message: "Username changed", username: username });
     }
     catch (error) {
         console.log(error);
@@ -590,15 +575,13 @@ const joinServers = async (req, res, next) => {
 };
 
 const leaveServers = async (req, res, next) => {
-    const { uid, serverId } = req.body;
+    const { userId, serverId } = req.body;
     try {
-        const user = await User.findOne({ uid: uid });
+        console.log(userId, serverId);
+        const user = await User.findOne({ _id: userId });
+        console.log(user);
         if (!user) {
             return res.status(400).send({ message: "User not found" });
-        }
-        const server = await User.findOne({ servers: { serverId: serverId } });
-        if (!server) {
-            return res.status(400).send({ message: "You don't have a server" });
         }
         // remove server id from User model
         user.servers = user.servers.filter((server) => server.serverId !== serverId);
@@ -606,10 +589,43 @@ const leaveServers = async (req, res, next) => {
         res.status(200).send({ message: "Server left" });
     } catch (error) {
         console.log(error);
-        next(error);
+        res.status(400).send({ message: "Error in leaving server" });
     }
 };
 
+const updateUser = async (req, res, next) => {
+    const { uid, name, email, username } = req.body;
+    try {
+        console.log(uid, name, email, username);
+        const user = await User.findOne({ uid: uid });
+        if (!user) {
+            return res.status(400).send({ message: "User not found" });
+        }
+        user.name = name;
+        user.email = email;
+        if (username !== "") {
+            // call change username function
+            user.chats.forEach(async (chat) => {
+                const chatId = chat.chatId;
+                const senderId = chat.users.id;
+                const response = await changeUserNameToChats(senderId, chatId, username);
+                if (response.status === "error") {
+                    res.status(400).send({ message: "Error in changing username" });
+                    return;
+                }
+                console.log(response);
+            });
+            user.username = username;
+        }
+        const updatedData = await user.save();
+        res.status(200).send({ message: "User updated", data: updatedData });
+        return;
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ error: error });
+        return;
+    }
+};
 
 const router = express.Router();
 
@@ -678,6 +694,10 @@ router.post("/changeUserName", changeUserName);
 
 // remove user from the server
 router.post("/leaveServer", leaveServers);
+
+// change user profile
+router.post("/updateUser", updateUser);
+
 
 
 module.exports = router;

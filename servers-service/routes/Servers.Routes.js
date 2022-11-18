@@ -96,6 +96,9 @@ router.post("/joinMember", async (req, res) => {
     try {
         const server = await Server.findOne({ serverId: serverId });
         if (server) {
+            if (server.members.filter(member => member.userId === userId).length > 0) {
+                server.members = server.members.filter(member => member.userId !== userId);
+            }
             server.members.push({
                 userId: userId,
                 userName: userName,
@@ -205,17 +208,58 @@ router.post('/changeHost', async (req, res) => {
     }
 });
 
+router.post("/updateUser", async (req, res) => {
+    const { serverId, uid, username } = req.body;
+    try {
+        console.log(uid, username);
+        const server = await Server.findOne({ serverId: serverId });
+        console.log(server.members)
+        if (server) {
+            server.members.forEach(member => {
+                if (member.userId === uid) {
+                    member.userName = username;
+                }
+            }
+            );
+            await server.save();
+            res.status(200).send({ message: "Username Changed" });
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(500).send({ message: "error" });
+    }
+});
 
-router.post("/removeMember", async (req, res) => {
+router.post("/leaveServer", async (req, res) => {
     const { serverId, userId } = req.body;
     try {
+        console.log(serverId, userId);
         const server = await Server.findOne({ serverId: serverId });
+        console.log(server);
         if (server) {
             const members = server.members;
-            const newMembers = members.filter(member => member.userId !== userId);
-            server.members = newMembers;
+            // convert isKick to true
+            if (members.length === 1) {
+                await Chat.findOneAndDelete({ chatId: serverId });
+                await Server.deleteOne({ serverId: serverId });
+                res.status(200).send({ message: "Server Left" });
+                return;
+            }
+            if (userId === server.currentHost) {
+                server.currentHost = members[1].userId;
+                server.Owner = members[1].userId;
+            }
+            members.forEach(member => {
+                if (member.userId === userId) {
+                    member.isKick = true;
+                }
+            });
+            server.members = members;
+            console.log(server)
             await server.save();
-            res.status(200).send({ message: "Member Removed", newMembers });
+            res.status(200).send({ message: "Server Left", data: server });
+        } else {
+            res.status(200).send({ message: "Server Not Found" });
         }
     } catch (err) {
         console.log(err);

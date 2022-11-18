@@ -1,7 +1,8 @@
 const User = require("../models/User.model.js");
 const { generateToken, getPayload } = require("../helpers/jwt_helper.js");
 const bcrypt = require("bcrypt");
-const { addUser } = require("./Chat.Controller.js");
+const { addUser, updateUser, removeServer } = require("../utils/Chat.utility.js");
+const { updateUserServer, kickFromServer } = require("../utils/Server.utility.js");
 
 
 // handle Error
@@ -66,7 +67,7 @@ const register = async (req, res, next) => {
 
         const user = await User.findOne({ email });
         if (user) {
-        const response = await addUser(user.uid, user.name, user.email);
+            const response = await addUser(user.uid, user.name, user.email);
             res.status(201).json({ message: "ACCOUNT CREATED SUCCESSFULLY", data: response });
         }
         return;
@@ -167,6 +168,120 @@ const logout = async (req, res, next) => {
 
 }
 
+const changePassword = async (req, res, next) => {
+    const { email, oldPass, newPass } = req.body;
+    try {
+        console.log(email, oldPass, newPass);
+        const user = await User.findOne({ email });
+        if (user) {
+            const auth = await bcrypt.compare(oldPass, user.password);
+            if (auth) {
+                user.password = newPass;
+                await user.save();
+                res.status(200).json({ message: "PASSWORD CHANGED SUCCESSFULLY" });
+                return;
+            }
+            throw Error('incorrect password');
+        } else {
+            throw Error('incorrect email');
+        }
+    } catch (err) {
+        const error = handleError(err);
+        console.log(error);
+        res.status(406).send(error);
+    }
+}
 
-module.exports = { register, login, logout };
+const updateDetails = async (req, res, next) => {
+    const uid = req.user;
+
+    console.log(req.body);
+    try {
+        const { firstName, lastName, username, email, password } = req.body;
+        const name = firstName + " " + lastName;
+        const user = await User.findOne({ uid });
+        console.log(user)
+        // check weather the password is correct
+        const auth = await bcrypt.compare(password, user.password);
+        console.log(auth);
+        if (user && auth) {
+            if (firstName !== "" && lastName !== "") {
+                user.name = name;
+            } else if (firstName !== "" && lastName === "") {
+                user.name = firstName + " " + user.name.split(" ")[1];
+            } else if (firstName === "" && lastName !== "") {
+                user.name = user.name.split(" ")[0] + " " + lastName;
+            }
+            if (email !== "") {
+                user.email = email;
+            }
+            const chatResponse = await updateUser(user.uid, user.name, user.email, username);
+            if (chatResponse.status === "Ok") {
+                if (username !== "") {
+                    const { data } = chatResponse;
+                    if (data.message === "User updated") {
+                        const { data: chatData } = data;
+                        const { servers } = chatData;
+                        servers.forEach(async (server) => {
+                            const { serverId } = server;
+                            const response = await updateUserServer(chatData._id, serverId, username);
+                            if (response.status === "error") {
+                                throw Error(response.message);
+                            }
+                        });
+                    }
+                    // const serverResponse = await updateUserServer(user.uid, username);
+                    console.log(data);
+                }
+                await user.save();
+                res.status(200).json({ message: "DETAILS UPDATED SUCCESSFULLY", data: chatResponse.data });
+                return;
+            }
+            throw Error(chatResponse?.error);
+        } else {
+            throw Error('incorrect password');
+        }
+    } catch (err) {
+        const error = handleError(err);
+        console.log(error);
+        res.status(500).send({ data: "error", error: error });
+        return;
+    }
+}
+
+const leaveServer = async (req, res, next) => {
+    const { serverId, userId } = req.body;
+    try {
+        console.log(serverId, userId);
+        const response = await kickFromServer(serverId, userId);
+        // console.log("response", response);
+        if (response.status === "ok") {
+            try {
+                const userChat = await removeServer(serverId, userId);
+                console.log(userChat);
+                if (userChat.status === "Ok") {
+                    res.status(200).json({ message: "SERVER LEFT SUCCESSFULLY", data: response.data });
+                    return;
+                } else {
+                    res.status(400).json({ message: "Something Happen", data: response.data });
+                    return;
+                }
+            } catch (err) {
+                console.log(err);
+                res.status(400).json({ message: "Something Happen", data: response.data });
+                return;
+            }
+        }
+        res.status(400).json({ message: "Something Happen", data: response.data });
+        return;
+    } catch (err) {
+        const error = handleError(err);
+        // console.log(error);
+        res.status(500).send({ data: "error", error: error });
+        return;
+    }
+}
+
+
+module.exports = { register, login, logout, changePassword, updateDetails, leaveServer };
 

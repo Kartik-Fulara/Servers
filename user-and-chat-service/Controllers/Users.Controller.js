@@ -1,9 +1,9 @@
-const Error = require("http-errors");
+
 const User = require("../models/user.model.js");
 const mongoose = require('mongoose');
 const { Chat } = require("../models/chat.model.js");
 const { nanoid } = require("nanoid");
-
+const { changeUserNameToChats, get_id, getUid } = require("../util/Chat.utility.js")
 
 
 const addUser = async (req, res, next) => {
@@ -48,25 +48,6 @@ const queryUser = async (req, res) => {
     }
 };
 
-const getUid = async (id) => {
-    try {
-        // find user by id
-        const user = await User.findOne({ _id: id });
-        return user.uid;
-    } catch (error) {
-        console.log(error);
-    }
-};
-
-const get_id = async (uid) => {
-    try {
-        // find user by id
-        const user = await User.findOne({ uid: uid });
-        return user._id;
-    } catch (error) {
-        console.log(error);
-    }
-};
 
 const addFriends = async (req, res, next) => {
     try {
@@ -192,6 +173,7 @@ const getChats = async (req, res, next) => {
         next(error);
     }
 };
+
 const getUser = async (req, res, next) => {
     const { uid = "", id = "" } = req.query;
     if (uid === "" && id === "") {
@@ -252,12 +234,24 @@ const changeUserName = async (req, res, next) => {
         if (!user) {
             return res.status(400).send({ message: "User not found" });
         }
+        user.chats.forEach(async (chat) => {
+            const chatId = chat.chatId;
+            const senderId = chat.users.id;
+            const response = await changeUserNameToChats(senderId, chatId, username);
+            if (response.status === "error") {
+                return res.status(400).send({ message: "Error in changing username" });
+            }
+            console.log(response);
+        });
+
         user.username = username;
+
         await user.save();
         res.status(200).send({ message: "Username changed" });
     }
     catch (error) {
-        console.log(error)
+        console.log(error);
+        res.status(400).send({ message: "Error in changing username" });
         next(error);
     }
 };
@@ -364,4 +358,4 @@ const joinServers = async (req, res, next) => {
 
 
 
-module.exports = { addUser, addFriends, joinServers, getFriends, getPendingFriends, queryUser, startChat, getChats, getUser, getUserServers, changeUserName, createServers, get_id };
+module.exports = { addUser, addFriends, joinServers, getFriends, getPendingFriends, queryUser, startChat, getChats, getUser, getUserServers, changeUserName, createServers, get_id, changeUserNameToChats };
