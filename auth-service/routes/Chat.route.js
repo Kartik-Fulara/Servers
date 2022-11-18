@@ -161,6 +161,39 @@ router.post("/changeUserName", async (req, res) => {
     }
 });
 
+router.post("/changeUserNameAtStart", async (req, res) => {
+
+    const { username, pass } = req.body;
+
+    const uid = req.user;
+
+    try {
+        console.log(pass, uid);
+        // check weather is password is correct or not
+        const user = await User.findOne({ uid });
+        if (!user) {
+            return res.status(400).send({ message: "User not found" });
+        }
+        const { data } = await axios.post(`${process.env.CHAT_SERVER_URL}/api/changeUserNameAtStart`, { username, uid });
+        res.send({ status: "Ok", data: data });
+        return;
+    } catch (err) {
+        console.log(err)
+        if (err.response.data === undefined) {
+            res.send({ status: "Error", message: "Error while changing username" });
+            return;
+        }
+        if (err !== undefined && err.response.data !== undefined && err.response.data.message === "Username already taken") {
+            console.log("Coming here");
+            res.send({ status: "Error", message: "Username already taken" });
+            return;
+        } else {
+            res.send({ status: "Error", message: "Error while changing username" });
+            return;
+        }
+    }
+});
+
 router.get("/messages", async (req, res) => {
 
     const { chatId } = req.query;

@@ -474,6 +474,34 @@ const changeUserName = async (req, res, next) => {
     }
 };
 
+const changeUserNameAtStart = async (req, res, next) => {
+    const { uid, username } = req.body;
+    try {
+        const user = await User.findOne({ uid: uid });
+        if (!user) {
+            return res.status(400).send({ message: "User not found" });
+        }
+        user.chats.forEach(async (chat) => {
+            const chatId = chat.chatId;
+            const senderId = chat.users.id;
+            const response = await changeUserNameToChats(senderId, chatId, username);
+            if (response.status === "error") {
+                res.status(400).send({ message: "Error in changing username" });
+                return;
+            }
+            console.log(response);
+        });
+        user.username = username;
+        await user.save();
+        res.status(200).send({ message: "Username changed", username: username });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(401).send({ message: "Username already taken" });
+        return;
+    }
+};
+
 const getFriends = async (req, res, next) => {
     const { uid = "", id = "" } = req.query;
     if (uid === "" && id === "") {
@@ -691,6 +719,9 @@ router.get("/getallServers", getUserServers);
 
 // change username
 router.post("/changeUserName", changeUserName);
+
+// change username when someone login
+router.post("/changeUserNameAtStart", changeUserNameAtStart);
 
 // remove user from the server
 router.post("/leaveServer", leaveServers);
