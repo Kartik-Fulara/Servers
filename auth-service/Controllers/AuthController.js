@@ -3,6 +3,7 @@ const { generateToken, getPayload } = require("../helpers/jwt_helper.js");
 const bcrypt = require("bcrypt");
 const { addUser, updateUser, removeServer } = require("../utils/Chat.utility.js");
 const { updateUserServer, kickFromServer } = require("../utils/Server.utility.js");
+const { nanoid } = require("nanoid");
 
 
 // handle Error
@@ -61,17 +62,14 @@ const register = async (req, res, next) => {
             throw new Error("Please Enter Your Name");
         }
 
-        await User.create({ name, email, password });
+        const uid = nanoid(50);
 
-        // add details to other server
-
-        const user = await User.findOne({ email });
-        if (user) {
-            const response = await addUser(user.uid, user.name, user.email);
+        const response = await addUser(uid, name, email);
+        if(response.status === 201) {
+            await User.create({ name, email, password, uid });
             res.status(201).json({ message: "ACCOUNT CREATED SUCCESSFULLY", data: response });
+            return;
         }
-        return;
-
     } catch (err) {
         const error = handleError(err);
         console.log(error);
